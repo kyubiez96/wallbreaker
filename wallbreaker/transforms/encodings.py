@@ -6,10 +6,13 @@ import re
 import urllib.parse
 
 LEET_MAP = {
-    "a": "4", "b": "8", "e": "3", "g": "9", "i": "1", "l": "1",
+    "a": "4", "b": "8", "e": "3", "g": "9", "i": "|", "l": "1",
     "o": "0", "s": "5", "t": "7", "z": "2",
 }
-LEET_REVERSE = {"4": "a", "8": "b", "3": "e", "9": "g", "1": "i", "0": "o", "5": "s", "7": "t", "2": "z"}
+# PPC 2026-10-18: 'i' was "1", colliding with 'l' -> "1" ("email" decoded as
+# "emaii"). Probe rejected '!' (collides with literal punctuation); '|' won
+# 5/5 roundtrips. Note: leet stays lossy=True (case folding) by design.
+LEET_REVERSE = {"4": "a", "8": "b", "3": "e", "9": "g", "|": "i", "0": "o", "5": "s", "7": "t", "2": "z", "1": "l"}
 
 MORSE_MAP = {
     "a": ".-", "b": "-...", "c": "-.-.", "d": "-..", "e": ".", "f": "..-.",

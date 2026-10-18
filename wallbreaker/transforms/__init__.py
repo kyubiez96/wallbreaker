@@ -151,3 +151,48 @@ def reverse_chain(text: str, names: list[str]) -> str:
             raise ValueError(f"Transform '{name}' is not reversible")
         text = t.decode(text)
     return text
+
+
+# PPC 2026-10-18: registry self-test. Call from tests/CI, NOT at import time.
+DEFAULT_VERIFY_CORPUS = (
+    "Hello world!",
+    "email Lille",
+    "The quick brown fox jumps over 13 lazy dogs.",
+    "Hi! how are you?",
+    "user@example.com (v2.1)",
+)
+
+
+def verify_transforms(corpus=None):
+    """Roundtrip self-test for reversible, non-lossy transforms.
+
+    Iterates TRANSFORMS, skips anything flagged .lossy or not .reversible,
+    applies encode/decode on each corpus sample, and reports the first
+    mismatch or exception per transform.
+
+    Returns:
+        list[tuple[str, str]]: (transform_name, reason) for each failure.
+        Empty list means all non-lossy reversible transforms verified.
+    """
+    if corpus is None:
+        corpus = DEFAULT_VERIFY_CORPUS
+
+    failures = []
+    for name, t in TRANSFORMS.items():
+        if t.lossy or not t.reversible:
+            continue
+        for sample in corpus:
+            try:
+                encoded = t.encode(sample)
+                decoded = t.decode(encoded)
+            except Exception as exc:
+                failures.append(
+                    (name, f"{type(exc).__name__} on {sample!r}: {exc}")
+                )
+                break
+            if decoded != sample:
+                failures.append(
+                    (name, f"roundtrip mismatch: {sample!r} -> {decoded!r}")
+                )
+                break
+    return failures
